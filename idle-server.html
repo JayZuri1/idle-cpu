@@ -78,6 +78,450 @@ button:focus-visible{outline:3px solid var(--cool);outline-offset:2px}
 .mk{font-size:.7rem;font-weight:400;margin-left:6px;color:var(--mute);white-space:nowrap}.mk.hi{color:var(--hot)}.mk.lo{color:var(--ok)}
 .mkt{font-size:.82rem;color:var(--mute);margin:-4px 0 8px}
 .up button.sale{background:var(--cool);color:#fff}
+.up{position:relative}
+.unit.new{animation:slidein .7s ease-out}
+@keyframes slidein{from{transform:translateX(-40px);opacity:0;box-shadow:0 0 16px var(--tc,#2fd0c0)}}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);background:var(--cool);color:#fff;padding:8px 16px;border-radius:20px;font-weight:600;font-size:.9rem;z-index:9;box-shadow:0 4px 16px #0006;pointer-events:none;white-space:nowrap;animation:toast 1.6s ease-out forwards}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,-16px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-8px)}}
+</style>
+</head>
+<body>
+<main>
+ <div class="top"><div><div class="cash" id="cash">$0</div><div class="rate" id="rate"></div></div>
+  <div style="text-align:right"><div class="rate" id="demand"></div><button id="snd" class="act alt" style="flex:none;padding:4px 10px;margin-top:4px;font-size:.8rem">🔊 Sound on</button></div></div>
+
+ <section class="die">
+  <div class="chip" id="chip"><div><b id="temp">30°</b><small id="clock"></small></div></div>
+  <div class="bars">
+   <div class="bar"><label><span>Users online</span><span id="uT"></span></label><div class="track"><div class="fill" id="uB"></div></div></div>
+   <div class="bar"><label><span>Heat</span><span id="hT"></span></label><div class="track"><div class="fill" id="hB"></div></div></div>
+   <div class="bar"><label><span>RAM</span><span id="rT"></span></label><div class="track"><div class="fill" id="rB"></div></div></div>
+   <div class="bar"><label><span>Storage</span><span id="sT"></span></label><div class="track"><div class="fill" id="sB"></div></div></div>
+   <div class="bar"><label><span>Power</span><span id="pT"></span></label><div class="track"><div class="fill" id="pB"></div></div></div>
+   <div class="bar"><label><span>Network</span><span id="nT"></span></label><div class="track"><div class="fill" id="nB"></div></div></div>
+  </div>
+ </section>
+
+ <div class="ev" id="ev"></div>
+ <div class="net" id="net" aria-hidden="true"></div>
+ <div class="rack" id="rack" aria-hidden="true"></div>
+ <p class="status" id="status"></p>
+ <div class="row">
+  <button class="act" id="click">Auto-handle: On</button>
+  <button class="act alt" id="purge">Purge logs</button>
+ </div>
+
+ <h2>Upgrades</h2>
+ <div class="mkt" id="news"></div>
+ <div id="ups"></div>
+ <h2>Hardware tier</h2>
+ <div class="up"><div class="n" id="tn"></div><div class="d" id="td"></div><button id="mig"></button></div>
+ <p class="fine">Progress saves automatically. <button id="reset" style="background:none;border:0;color:var(--mute);text-decoration:underline;font-size:inherit">Reset game</button></p>
+</main>
+
+<script>
+const KEY='idleServerV1';
+const fresh=()=>({cash:0,demand:3,temp:30,data:0,throttle:false,purgeCd:0,
+ tier:0,mk:{},mkEv:30,ev:'',evT:0,nextEv:40,
+ lv:{cores:0,clock:0,vms:0,ram:0,disk:0,cool:0,psu:0,net:0,fw:0,lb:0}});
+let S=fresh();
+try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);S=Object.assign(fresh(),o,{lv:Object.assign(fresh().lv,o.lv)})}}catch(e){}
+
+const U={
+ cores:{n:'CPU cores',base:50,g:1.5,max:32,d:l=>`${1+l} → ${2+l} cores · +10 user capacity each`},
+ clock:{n:'Clock speed',base:80,g:1.7,max:20,d:l=>`${(2+l*.3).toFixed(1)} → ${(2.3+l*.3).toFixed(1)} GHz · +20% capacity, runs hotter`},
+ vms:{n:'Virtual servers',base:300,g:2.2,max:12,d:l=>`${1+l} → ${2+l} VMs · +35% capacity each`},
+ ram:{n:'RAM stick',base:40,g:1.45,max:40,d:l=>`${2+l*4} → ${6+l*4} GB · 8 users per GB`},
+ disk:{n:'Storage drive',base:30,g:1.5,max:40,d:l=>`${20+l*40} → ${60+l*40} GB · users generate data`},
+ cool:{n:'Cooling',base:100,g:2.3,max:6,d:l=>`${['Stock fan','Heatsink','Dual fans','Liquid loop','Big radiator','Chiller','Cryo'][l]} → ${['Heatsink','Dual fans','Liquid loop','Big radiator','Chiller','Cryo','Maxed'][l]}`},
+ psu:{n:'Power supply',base:70,g:1.5,max:25,d:l=>`${(300+l*220)*tm()} → ${(520+l*220)*tm()} W · overdraw causes brownouts`},
+ net:{n:'Network bandwidth',base:60,g:1.55,max:30,d:l=>`${(1+l)*14*tm()} → ${(2+l)*14*tm()} users of bandwidth`},
+ fw:{n:'Firewall',base:150,g:1.9,max:5,d:l=>`Blocks DDoS junk · keeps ${Math.min(100,40+l*15)}% → ${Math.min(100,55+l*15)}% income in attacks`},
+ lb:{n:'Load balancer',base:200,g:1.8,max:8,d:l=>`Spreads load · heat -${l*6}% → -${l*6+6}%`}
+};
+const cost=k=>Math.floor(U[k].base*Math.pow(U[k].g+.04,S.lv[k])*Math.pow(3,S.tier)*(S.mk[k]||1));
+const L=S.lv;
+const cpuCap=()=>Math.floor((1+L.cores)*10*(1+.2*L.clock)*(1+.35*L.vms)*tm()*(brown()?.6:1)*(S.throttle?.5:1));
+const ramCap=()=>(2+L.ram*4)*8*tm();
+const diskCap=()=>(20+L.disk*40)*tm();
+const maxUsers=()=>Math.min(cpuCap(),ramCap(),netCap());
+const served=()=>Math.floor(Math.min(S.demand*(S.ev==='spike'?2:S.ev==='ddos'?2:1),maxUsers()));
+const load=()=>Math.min(1,served()/Math.max(1,Math.floor(cpuCap()/(S.throttle?.5:1))));
+const diskFull=()=>S.data>=diskCap();
+const income=()=>served()*.6*(S.throttle?.7:1)*(diskFull()?.5:1)*(S.ev==='ddos'?Math.min(1,.4+.15*L.fw):1)-powerDraw()*.002;
+
+const $=id=>document.getElementById(id);
+let AC=null,hum=null,humG=null,humF=null,snd=true,lastAlarm=0,wasFull=false,rackSig='';
+function initAudio(){
+ if(AC){if(AC.resume)AC.resume();return}
+ try{AC=new (window.AudioContext||window.webkitAudioContext)();
+ hum=AC.createOscillator();hum.type='sawtooth';hum.frequency.value=60;
+ humF=AC.createBiquadFilter();humF.type='lowpass';humF.frequency.value=200;
+ humG=AC.createGain();humG.gain.value=0;
+ hum.connect(humF);humF.connect(humG);humG.connect(AC.destination);hum.start();}catch(e){AC=null}
+}
+function beep(f,d,type,v,f2){
+ if(!AC||!snd)return;
+ const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;
+ o.type=type||'square';o.frequency.setValueAtTime(f,t);
+ if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+ g.gain.setValueAtTime(v||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+ o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);
+}
+const sfx={click:()=>beep(900,.05,'square',.03,1400),
+ buy:()=>{beep(520,.09,'triangle',.06);setTimeout(()=>beep(780,.14,'triangle',.06),80)},
+ purge:()=>beep(400,.3,'sawtooth',.04,80),
+ alarm:()=>{beep(880,.15,'square',.04);setTimeout(()=>beep(660,.15,'square',.04),180)},
+ full:()=>beep(150,.4,'sawtooth',.05)};
+function updateHum(){
+ if(!AC||!humG)return;
+ const t=AC.currentTime,h=Math.max(0,S.temp-30);
+ humG.gain.setTargetAtTime(snd?.015+h/80*.03:0,t,.2);
+ hum.frequency.setTargetAtTime(55+h*1.2,t,.3);
+ humF.frequency.setTargetAtTime(160+h*6,t,.3);
+}
+document.addEventListener('pointerdown',initAudio);
+$('snd').onclick=()=>{initAudio();snd=!snd;$('snd').textContent=snd?'🔊 Sound on':'🔇 Sound off';if(snd)sfx.click()};
+const TIERS=['Home PC','Rack Server','Data Center','Hyperscale','Quantum Farm'],TC=[3000,40000,600000,8e6],TCOL=['#e39a54','#2fd0c0','#4a8cff','#b07bff','#ff5cd6'];
+const tm=()=>Math.pow(5,S.tier);
+const powerDraw=()=>(80+(1+L.cores)*35+L.clock*18+L.vms*25+L.ram*6+L.disk*4+L.cool*10+L.net*8)*tm();
+const psuCap=()=>(300+L.psu*220)*tm();
+const brown=()=>powerDraw()>psuCap();
+const netCap=()=>Math.floor((1+L.net)*14*tm()*(S.ev==='ddos'?.5:1));
+function migrate(){const c=TC[S.tier];if(S.tier>=4||S.cash<c)return;S.tier++;S.cash=0;S.demand=3*tm();S.temp=30;S.data=0;S.throttle=false;S.ev='';S.nextEv=60;for(const k in L)L[k]=0;sfx.buy();setTimeout(sfx.buy,200);toast('Migrated to '+TIERS[S.tier]+'!');$('chip').animate([{transform:'scale(1.3) rotate(8deg)'},{transform:'scale(1)'}],{duration:700,easing:'ease-out'})}
+function renderExtra(){
+ document.body.style.setProperty('--tc',TCOL[S.tier]);
+ const m=maxUsers(),s=served(),r=Math.min(1,s/Math.max(1,m)),pw=powerDraw()/psuCap(),nr=s/netCap();
+ $('pT').textContent=Math.round(powerDraw())+' / '+Math.round(psuCap())+' W';
+ $('pB').style.width=Math.min(100,pw*100)+'%';$('pB').style.background=pw>1?'var(--hot)':pw>.85?'var(--cu)':'';
+ $('nT').textContent=fmt(s)+' / '+fmt(netCap());$('nB').style.width=Math.min(100,nr*100)+'%';
+ $('net').className='net'+(S.ev==='ddos'?' ddos':'');$('net').style.setProperty('--pk',(3-2.6*r).toFixed(2)+'s');
+ [...$('net').children].forEach((d,i)=>d.style.display=i<Math.ceil(r*14)?'':'none');
+ const e=$('ev');e.className='ev '+S.ev;e.style.display=S.ev?'block':'none';
+ e.textContent=S.ev==='spike'?'Traffic spike! Demand is 2x for '+Math.ceil(S.evT)+'s.':S.ev==='ddos'?'DDoS attack! Junk traffic floods the network for '+Math.ceil(S.evT)+'s. A firewall keeps your income.':'';
+ $('clock').textContent=TIERS[S.tier]+' · '+(2+L.clock*.3).toFixed(1)+' GHz';
+ $('tn').textContent='Tier '+(S.tier+1)+': '+TIERS[S.tier];
+ $('td').textContent=S.tier>=4?'Top tier reached.':'Next: '+TIERS[S.tier+1]+'. Resets cash and upgrades. Capacity x5, costs x3, heat +10%.';
+ const mg=$('mig');mg.textContent=S.tier>=4?'Max':'$'+fmt(TC[S.tier]);mg.disabled=S.tier>=4||S.cash<TC[S.tier];
+ const rk=$('rack');rk.classList.toggle('brown',brown());
+ const pu=rk.querySelector('.pwb i');if(pu)pu.style.width=Math.min(100,pw*100)+'%';
+ const t=Date.now()/700;
+ rk.querySelectorAll('.unit .mini i').forEach((x,i)=>x.style.width=Math.max(4,Math.min(100,load()*100*(.85+.15*Math.sin(t+i*1.7))))+'%');
+ rk.querySelectorAll('.port').forEach(p=>p.classList.toggle('on',Math.random()<nr*.8+.1));
+ const SP='\u2581\u2582\u2583\u2584\u2585\u2586\u2587\u2588';
+ for(const k in U){const m=S.mk[k]||1,h=MH[k]||[m];
+  const sp=h.map(v=>SP[Math.max(0,Math.min(7,Math.round((v-.6)/1.2*7)))]).join('');
+  const el=$('m_'+k);if(el){el.textContent=(m>1.05?'\u25b2 ':m<.95?'\u25bc ':'')+Math.round(m*100)+'% '+sp;el.className='mk '+(m>1.25?'hi':m<.8?'lo':'')}
+  const b=$('b_'+k);if(b)b.classList.toggle('sale',m<.8)}
+ $('news').textContent=newsMsg||'Parts market is calm.';
+}
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),1700)}
+function flash(k){
+ toast('Upgraded: '+U[k].n+' Lv '+L[k]);
+ $('chip').animate([{transform:'scale(1.15)',boxShadow:'0 0 32px var(--tc,#e39a54)'},{transform:'scale(1)'}],{duration:500,easing:'ease-out'});
+ $('rack').animate([{boxShadow:'inset 0 0 30px #000,0 0 24px var(--tc,#2fd0c0)'},{boxShadow:'inset 0 0 30px #000,0 0 0 transparent'}],{duration:800});
+ const row=$('b_'+k).closest('.up');
+ row.animate([{boxShadow:'0 0 0 3px var(--cool)'},{boxShadow:'0 0 0 0 transparent'}],{duration:700});
+ document.querySelectorAll('#rack .fan').forEach(f=>f.animate([{filter:'brightness(2.2)'},{filter:'none'}],{duration:700}));
+}
+function renderRack(){
+ const n=1+L.vms,bays=Math.min(6,1+Math.floor(L.disk/2)),sig=n+'-'+bays+'-'+L.cool+'-'+L.net+'-'+S.tier,r=$('rack');
+ if(sig!==rackSig){rackSig=sig;
+  let h='';for(let i=0;i<n;i++){h+=`<div class="unit"><div class="bays">${'<i class="bay"></i>'.repeat(bays)}</div><div class="id"><span class="led pw"></span><span class="led ac"></span><b>VM-${String(i+1).padStart(2,'0')}</b><span class="mini"><i></i></span></div><div class="fans"><i class="fan"></i><i class="fan"></i></div></div>`}
+  h+=`<div class="unit sw"><span>SWITCH</span><div class="ports">${'<i class="port"></i>'.repeat(Math.min(16,4+L.net*2))}</div></div><div class="unit psu"><span>PSU</span><span class="pwb"><i></i></span></div><div class="unit cool"><span>${['Stock fan','Heatsink','Dual fans','Liquid loop','Radiator','Chiller','Cryo'][L.cool]}</span><span class="pipe" style="--p:${L.cool}"></span></div>`;
+  r.innerHTML=h;if(rackPrevN&&n>rackPrevN)r.children[n-1].classList.add('new');rackPrevN=n;}
+ r.style.setProperty('--load',load().toFixed(2));
+ r.style.setProperty('--fan',Math.max(.12,1.6-(S.temp-30)/45).toFixed(2)+'s');
+ r.className='rack'+(S.throttle?' hot':S.temp>75?' warm':'')+(diskFull()?' full':'');
+ const lit=Math.round(Math.min(1,S.data/diskCap())*bays);
+ r.querySelectorAll('.unit').forEach(u=>u.querySelectorAll('.bay').forEach((b,j)=>b.classList.toggle('on',j<lit)));
+}
+const fmt=n=>n>=1e9?(n/1e9).toFixed(2)+'B':n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e4?(n/1e3).toFixed(1)+'K':Math.floor(n).toLocaleString();
+
+function tick(dt){
+ // demand grows on its own
+ S.demand=Math.min(S.demand*(1+.004*dt)+.25*dt*tm(),maxUsers()*1.3+5);
+ mkT+=dt;
+ if(mkT>=2){mkT=0;for(const k in U){let m=S.mk[k]||1;m+=(1-m)*.04+(Math.random()-.5)*.1;m=Math.max(.6,Math.min(1.8,m));S.mk[k]=m;(MH[k]=MH[k]||[]).push(m);if(MH[k].length>14)MH[k].shift()}}
+ S.mkEv-=dt;
+ if(S.mkEv<=0){S.mkEv=50+Math.random()*70;const ks=Object.keys(U),k=ks[Math.floor(Math.random()*ks.length)],up=Math.random()<.6;S.mk[k]=Math.max(.6,Math.min(1.8,(S.mk[k]||1)*(up?1.4:.6)));newsMsg=up?U[k].n+' shortage! Prices are surging.':U[k].n+' is on clearance. Prices dropped.'}
+ S.nextEv-=dt;
+ if(S.ev){S.evT-=dt;if(S.evT<=0)S.ev=''}
+ else if(S.nextEv<=0){S.nextEv=90+Math.random()*120;const sp=Math.random()<.5;S.ev=sp?'spike':'ddos';S.evT=sp?15:20;sfx.alarm()}
+ const s=served();
+ S.cash=Math.max(0,S.cash+income()*dt);
+ if(auto){autoT+=dt;while(autoT>=.5)es:0,clock:0,vms:0,ram:0,disk:0,cool:0,psu:0,net:0,fw:0,lb:0}});
+let S=fresh();
+try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);S=Object.assign(fresh(),o,{lv:Object.assign(fresh().lv,o.lv)})}}catch(e){}
+
+const U={
+ cores:{n:'CPU cores',base:50,g:1.5,max:32,d:l=>`${1+l} → ${2+l} cores · +10 user capacity each`},
+ clock:{n:'Clock speed',base:80,g:1.7,max:20,d:l=>`${(2+l*.3).toFixed(1)} → ${(2.3+l*.3).toFixed(1)} GHz · +20% capacity, runs hotter`},
+ vms:{n:'Virtual servers',base:300,g:2.2,max:12,d:l=>`${1+l} → ${2+l} VMs · +35% capacity each`},
+ ram:{n:'RAM stick',base:40,g:1.45,max:40,d:l=>`${2+l*4} → ${6+l*4} GB · 8 users per GB`},
+ disk:{n:'Storage drive',base:30,g:1.5,max:40,d:l=>`${20+l*40} → ${60+l*40} GB · users generate data`},
+ cool:{n:'Cooling',base:100,g:2.3,max:6,d:l=>`${['Stock fan','Heatsink','Dual fans','Liquid loop','Big radiator','Chiller','Cryo'][l]} → ${['Heatsink','Dual fans','Liquid loop','Big radiator','Chiller','Cryo','Maxed'][l]}`},
+ psu:{n:'Power supply',base:70,g:1.5,max:25,d:l=>`${(300+l*220)*tm()} → ${(520+l*220)*tm()} W · overdraw causes brownouts`},
+ net:{n:'Network bandwidth',base:60,g:1.55,max:30,d:l=>`${(1+l)*14*tm()} → ${(2+l)*14*tm()} users of bandwidth`},
+ fw:{n:'Firewall',base:150,g:1.9,max:5,d:l=>`Blocks DDoS junk · keeps ${Math.min(100,40+l*15)}% → ${Math.min(100,55+l*15)}% income in attacks`},
+ lb:{n:'Load balancer',base:200,g:1.8,max:8,d:l=>`Spreads load · heat -${l*6}% → -${l*6+6}%`}
+};
+const cost=k=>Math.floor(U[k].base*Math.pow(U[k].g+.04,S.lv[k])*Math.pow(3,S.tier)*(S.mk[k]||1));
+const L=S.lv;
+const cpuCap=()=>Math.floor((1+L.cores)*10*(1+.2*L.clock)*(1+.35*L.vms)*tm()*(brown()?.6:1)*(S.throttle?.5:1));
+const ramCap=()=>(2+L.ram*4)*8*tm();
+const diskCap=()=>(20+L.disk*40)*tm();
+const maxUsers=()=>Math.min(cpuCap(),ramCap(),netCap());
+const served=()=>Math.floor(Math.min(S.demand*(S.ev==='spike'?2:S.ev==='ddos'?2:1),maxUsers()));
+const load=()=>Math.min(1,served()/Math.max(1,Math.floor(cpuCap()/(S.throttle?.5:1))));
+const diskFull=()=>S.data>=diskCap();
+const income=()=>served()*.6*(S.throttle?.7:1)*(diskFull()?.5:1)*(S.ev==='ddos'?Math.min(1,.4+.15*L.fw):1)-powerDraw()*.002;
+
+const $=id=>document.getElementById(id);
+let AC=null,hum=null,humG=null,humF=null,snd=true,lastAlarm=0,wasFull=false,rackSig='';
+function initAudio(){
+ if(AC){if(AC.resume)AC.resume();return}
+ try{AC=new (window.AudioContext||window.webkitAudioContext)();
+ hum=AC.createOscillator();hum.type='sawtooth';hum.frequency.value=60;
+ humF=AC.createBiquadFilter();humF.type='lowpass';humF.frequency.value=200;
+ humG=AC.createGain();humG.gain.value=0;
+ hum.connect(humF);humF.connect(humG);humG.connect(AC.destination);hum.start();}catch(e){AC=null}
+}
+function beep(f,d,type,v,f2){
+ if(!AC||!snd)return;
+ const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;
+ o.type=type||'square';o.frequency.setValueAtTime(f,t);
+ if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+ g.gain.setValueAtTime(v||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+ o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);
+}
+const sfx={click:()=>beep(900,.05,'square',.03,1400),
+ buy:()=>{beep(520,.09,'triangle',.06);setTimeout(()=>beep(780,.14,'triangle',.06),80)},
+ purge:()=>beep(400,.3,'sawtooth',.04,80),
+ alarm:()=>{beep(880,.15,'square',.04);setTimeout(()=>beep(660,.15,'square',.04),180)},
+ full:()=>beep(150,.4,'sawtooth',.05)};
+function updateHum(){
+ if(!AC||!humG)return;
+ const t=AC.currentTime,h=Math.max(0,S.temp-30);
+ humG.gain.setTargetAtTime(snd?.015+h/80*.03:0,t,.2);
+ hum.frequency.setTargetAtTime(55+h*1.2,t,.3);
+ humF.frequency.setTargetAtTime(160+h*6,t,.3);
+}
+document.addEventListener('pointerdown',initAudio);
+$('snd').onclick=()=>{initAudio();snd=!snd;$('snd').textContent=snd?'🔊 Sound on':'🔇 Sound off';if(snd)sfx.click()};
+const TIERS=['Home PC','Rack Server','Data Center','Hyperscale','Quantum Farm'],TC=[3000,40000,600000,8e6],TCOL=['#e39a54','#2fd0c0','#4a8cff','#b07bff','#ff5cd6'];
+const tm=()=>Math.pow(5,S.tier);
+const powerDraw=()=>(80+(1+L.cores)*35+L.clock*18+L.vms*25+L.ram*6+L.disk*4+L.cool*10+L.net*8)*tm();
+const psuCap=()=>(300+L.psu*220)*tm();
+const brown=()=>powerDraw()>psuCap();
+const netCap=()=>Math.floor((1+L.net)*14*tm()*(S.ev==='ddos'?.5:1));
+function migrate(){const c=TC[S.tier];if(S.tier>=4||S.cash<c)return;S.tier++;S.cash=0;S.demand=3*tm();S.temp=30;S.data=0;S.throttle=false;S.ev='';S.nextEv=60;for(const k in L)L[k]=0;sfx.buy();setTimeout(sfx.buy,200);toast('Migrated to '+TIERS[S.tier]+'!');$('chip').animate([{transform:'scale(1.3) rotate(8deg)'},{transform:'scale(1)'}],{duration:700,easing:'ease-out'})}
+function renderExtra(){
+ document.body.style.setProperty('--tc',TCOL[S.tier]);
+ const m=maxUsers(),s=served(),r=Math.min(1,s/Math.max(1,m)),pw=powerDraw()/psuCap(),nr=s/netCap();
+ $('pT').textContent=Math.round(powerDraw())+' / '+Math.round(psuCap())+' W';
+ $('pB').style.width=Math.min(100,pw*100)+'%';$('pB').style.background=pw>1?'var(--hot)':pw>.85?'var(--cu)':'';
+ $('nT').textContent=fmt(s)+' / '+fmt(netCap());$('nB').style.width=Math.min(100,nr*100)+'%';
+ $('net').className='net'+(S.ev==='ddos'?' ddos':'');$('net').style.setProperty('--pk',(3-2.6*r).toFixed(2)+'s');
+ [...$('net').children].forEach((d,i)=>d.style.display=i<Math.ceil(r*14)?'':'none');
+ const e=$('ev');e.className='ev '+S.ev;e.style.display=S.ev?'block':'none';
+ e.textContent=S.ev==='spike'?'Traffic spike! Demand is 2x for '+Math.ceil(S.evT)+'s.':S.ev==='ddos'?'DDoS attack! Junk traffic floods the network for '+Math.ceil(S.evT)+'s. A firewall keeps your income.':'';
+ $('clock').textContent=TIERS[S.tier]+' · '+(2+L.clock*.3).toFixed(1)+' GHz';
+ $('tn').textContent='Tier '+(S.tier+1)+': '+TIERS[S.tier];
+ $('td').textContent=S.tier>=4?'Top tier reached.':'Next: '+TIERS[S.tier+1]+'. Resets cash and upgrades. Capacity x5, costs x3, heat +10%.';
+ const mg=$('mig');mg.textContent=S.tier>=4?'Max':'$'+fmt(TC[S.tier]);mg.disabled=S.tier>=4||S.cash<TC[S.tier];
+ const rk=$('rack');rk.classList.toggle('brown',brown());
+ const pu=rk.querySelector('.pwb i');if(pu)pu.style.width=Math.min(100,pw*100)+'%';
+ const t=Date.now()/700;
+ rk.querySelectorAll('.unit .mini i').forEach((x,i)=>x.style.width=Math.max(4,Math.min(100,load()*100*(.85+.15*Math.sin(t+i*1.7))))+'%');
+ rk.querySelectorAll('.port').forEach(p=>p.classList.toggle('on',Math.random()<nr*.8+.1));
+ const SP='\u2581\u2582\u2583\u2584\u2585\u2586\u2587\u2588';
+ for(const k in U){const m=S.mk[k]||1,h=MH[k]||[m];
+  const sp=h.map(v=>SP[Math.max(0,Math.min(7,Math.round((v-.6)/1.2*7)))]).join('');
+  const el=$('m_'+k);if(el){el.textContent=(m>1.05?'\u25b2 ':m<.95?'\u25bc ':'')+Math.round(m*100)+'% '+sp;el.className='mk '+(m>1.25?'hi':m<.8?'lo':'')}
+  const b=$('b_'+k);if(b)b.classList.toggle('sale',m<.8)}
+ $('news').textContent=newsMsg||'Parts market is calm.';
+}
+function toast(t){const e=document.createElement('div');e.className='toast';e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),1700)}
+function flash(k){
+ toast('Upgraded: '+U[k].n+' Lv '+L[k]);
+ $('chip').animate([{transform:'scale(1.15)',boxShadow:'0 0 32px var(--tc,#e39a54)'},{transform:'scale(1)'}],{duration:500,easing:'ease-out'});
+ $('rack').animate([{boxShadow:'inset 0 0 30px #000,0 0 24px var(--tc,#2fd0c0)'},{boxShadow:'inset 0 0 30px #000,0 0 0 transparent'}],{duration:800});
+ const row=$('b_'+k).closest('.up');
+ row.animate([{boxShadow:'0 0 0 3px var(--cool)'},{boxShadow:'0 0 0 0 transparent'}],{duration:700});
+ document.querySelectorAll('#rack .fan').forEach(f=>f.animate([{filter:'brightness(2.2)'},{filter:'none'}],{duration:700}));
+}
+function renderRack(){
+ const n=1+L.vms,bays=Math.min(6,1+Math.floor(L.disk/2)),sig=n+'-'+bays+'-'+L.cool+'-'+L.net+'-'+S.tier,r=$('rack');
+ if(sig!==rackSig){rackSig=sig;
+  let h='';for(let i=0;i<n;i++){h+=`<div class="unit"><div class="bays">${'<i class="bay"></i>'.repeat(bays)}</div><div class="id"><span class="led pw"></span><span class="led ac"></span><b>VM-${String(i+1).padStart(2,'0')}</b><span class="mini"><i></i></span></div><div class="fans"><i class="fan"></i><i class="fan"></i></div></div>`}
+  h+=`<div class="unit sw"><span>SWITCH</span><div class="ports">${'<i class="port"></i>'.repeat(Math.min(16,4+L.net*2))}</div></div><div class="unit psu"><span>PSU</span><span class="pwb"><i></i></span></div><div class="unit cool"><span>${['Stock fan','Heatsink','Dual fans','Liquid loop','Radiator','Chiller','Cryo'][L.cool]}</span><span class="pipe" style="--p:${L.cool}"></span></div>`;
+  r.innerHTML=h;if(rackPrevN&&n>rackPrevN)r.children[n-1].classList.add('new');rackPrevN=n;}
+ r.style.setProperty('--load',load().toFixed(2));
+ r.style.setProperty('--fan',Math.max(.12,1.6-(S.temp-30)/45).toFixed(2)+'s');
+ r.className='rack'+(S.throttle?' hot':S.temp>75?' warm':'')+(diskFull()?' full':'');
+ const lit=Math.round(Math.min(1,S.data/diskCap())*bays);
+ r.querySelectorAll('.unit').forEach(u=>u.querySelectorAll('.bay').forEach((b,j)=>b.classList.toggle('on',j<lit)));
+}
+const fmt=n=>n>=1e9?(n/1e9).toFixed(2)+'B':n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e4?(n/1e3).toFixed(1)+'K':Math.floor(n).toLocaleString();
+
+function tick(dt){
+ // demand grows on its own
+ S.demand=Math.min(S.demand*(1+.004*dt)+.25*dt*tm(),maxUsers()*1.3+5);
+ mkT+=dt;
+ if(mkT>=2){mkT=0;for(const k in U){let m=S.mk[k]||1;m+=(1-m)*.04+(Math.random()-.5)*.1;m=Math.max(.6,Math.min(1.8,m));S.mk[k]=m;(MH[k]=MH[k]||[]).push(m);if(MH[k].length>14)MH[k].shift()}}
+ S.mkEv-=dt;
+ if(S.mkEv<=0){S.mkEv=50+Math.random()*70;const ks=Object.keys(U),k=ks[Math.floor(Math.random()*ks.length)],up=Math.random()<.6;S.mk[k]=Math.max(.6,Math.min(1.8,(S.mk[k]||1)*(up?1.4:.6)));newsMsg=up?U[k].n+' shortage! Prices are surging.':U[k].n+' is on clearance. Prices dropped.'}
+ S.nextEv-=dt;
+ if(S.ev){S.evT-=dt;if(S.evT<=0)S.ev=''}
+ else if(S.nextEv<=0){S.nextEv=90+Math.random()*120;const sp=Math.random()<.5;S.ev=sp?'spike':'ddos';S.evT=sp?15:20;sfx.alarm()}
+ const s=served();
+ S.cash=Math.max(0,S.cash+income()*dt);
+ if(auto){autoT+=dt;while(autoT>=.5){autoT-=.5;S.cash+=1+L.clock*.5+served()*.02}}
+ // data
+ S.data=Math.min(diskCap(),S.data+s*.004*dt);
+ const full=diskFull();if(full&&!wasFull)sfx.full();wasFull=full;
+ // heat: target depends on load, clock, cooling
+ const target=28+85*load()*(1+.1*L.clock)*(1+.1*S.tier)*(1-.06*L.lb)/(1+.6*L.cool);
+ S.temp+=(target-S.temp)*Math.min(1,.15*dt);
+ if(!S.throttle&&S.temp>=95){S.throttle=true;lastAlarm=0;sfx.alarm()}
+ if(S.throttle){lastAlarm+=dt;if(lastAlarm>2){lastAlarm=0;sfx.alarm()}}
+ if(S.throttle&&S.temp<=70)S.throttle=false;
+ if(S.purgeCd>0)S.purgeCd=Math.max(0,S.purgeCd-dt);
+}
+
+function build(){
+ $('ups').innerHTML=Object.keys(U).map(k=>`<div class="up"><div class="n">${U[k].n} <span id="l_${k}" style="color:var(--mute);font-weight:400"></span><span class="mk" id="m_${k}"></span></div><div class="d" id="d_${k}"></div><button data-k="${k}" id="b_${k}"></button></div>`).join('');
+ $('ups').onclick=e=>{const k=e.target.dataset&&e.target.dataset.k;if(k)buy(k)};
+}
+function buy(k){
+ const c=cost(k);if(S.cash<c||S.lv[k]>=U[k].max)return;
+ S.cash-=c;S.lv[k]++;sfx.buy();flash(k);
+}
+let auto=true,autoT=0,mkT=0,newsMsg='',MH={},rackPrevN=0;
+$('click').onclick=()=>{auto=!auto;$('click').textContent='Auto-handle: '+(auto?'On':'Off');sfx.click()};
+$('purge').onclick=()=>{if(S.purgeCd>0)return;S.data*=.6;S.purgeCd=20;sfx.purge()};
+$('reset').onclick=()=>{if(confirm('Erase all progress?')){try{localStorage.removeItem(KEY)}catch(e){}S=fresh();location.reload()}};
+
+function bar(id,pct,color){const f=$(id);f.style.width=Math.min(100,pct)+'%';f.style.background=color||''}
+function render(){
+ $('cash').textContent='$'+fmt(S.cash);
+ $('rate').textContent='$'+income().toFixed(1)+'/s';
+ $('demand').textContent='Demand: '+fmt(S.demand)+' users';
+ const s=served(),m=maxUsers();
+ $('uT').textContent=fmt(s)+' / '+fmt(m);bar('uB',s/m*100);
+ const hot=S.temp>=95||S.throttle?'var(--hot)':S.temp>75?'var(--cu)':'var(--cool)';
+ $('hT').textContent=Math.round(S.temp)+'°C';bar('hB',(S.temp-25)/80*100,hot);
+ const ramUse=Math.min(100,s/ramCap()*100);
+ $('rT').textContent=Math.round(s/(8*tm())*10)/10+' / '+(2+L.ram*4)+' GB';bar('rB',ramUse,ramUse>95?'var(--cu)':'');
+ $('sT').textContent=S.data.toFixed(1)+' / '+diskCap()+' GB';bar('sB',S.data/diskCap()*100,diskFull()?'var(--hot)':S.data/diskCap()>.8?'var(--cu)':'');
+ $('temp').textContent=Math.round(S.temp)+'°';
+ $('clock').textContent=(2+L.clock*.3).toFixed(1)+' GHz · '+(1+L.cores)+'c';
+ $('chip').className='chip '+(S.throttle?'hot':S.temp>75?'warm':'');
+ const st=$('status');
+ if(S.throttle){st.textContent='CPU is throttling! Capacity and income are halved. Buy cooling or wait to cool below 70°.';st.style.color='var(--hot)'}
+ else if(brown()){st.textContent='Brownout! Power draw exceeds your PSU. Capacity cut by 40%.';st.style.color='var(--hot)'}
+ else if(diskFull()){st.textContent='Disk full — income cut by 70%. Purge logs or buy storage.';st.style.color='var(--hot)'}
+ else if(S.demand>m){st.textContent=netCap()<Math.min(cpuCap(),ramCap())?'Max users reached: network bandwidth is the bottleneck.':ramCap()<cpuCap()?'Max users reached: RAM is the bottleneck.':'Max users reached: upgrade CPU or add a virtual server.';st.style.color='var(--cu)'}
+ else{st.textContent='Running smoothly.';st.style.color='var(--ok)'}
+ $('purge').textContent=S.purgeCd>0?'Purge logs ('+Math.ceil(S.purgeCd)+'s)':'Purge logs (−40%)';
+ $('purge').disabled=S.purgeCd>0;
+ for(const k in U){
+  const maxed=L[k]>=U[k].max;
+  $('l_'+k).textContent='Lv '+L[k];
+  $('d_'+k).textContent=maxed?'Maxed out':U[k].d(L[k]);
+  const b=$('b_'+k);b.textContent=maxed?'Max':'$'+fmt(cost(k));b.disabled=maxed||S.cash<cost(k);
+ }
+}
+build();
+$('net').innerHTML=Array.from({length:14},(_,i)=>`<i style="animation-delay:-${(i*.21).toFixed(2)}s"></i>`).join('');
+$('mig').onclick=migrate;
+let last=performance.now(),saveT=0;
+setInterval(()=>{
+ const now=performance.now();const dt=Math.min(1,(now-last)/1000);last=now;
+ tick(dt);render();renderRack();renderExtra();updateHum();
+ saveT+=dt;if(saveT>3){saveT=0;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+},100);
+</script>
+</body>
+</html>>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Idle Server</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9efec;--panel:#fff;--ink:#12302c;--mute:#5d7a75;--line:#c9d8d3;--cu:#b4691f;--cool:#138f86;--hot:#d93a1f;--ok:#2f8f4e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1a18;--panel:#12292580;--ink:#e6f1ee;--mute:#8fb0aa;--line:#24443f;--cu:#e39a54;--cool:#5ad1c8;--hot:#ff6a4a;--ok:#6fd08c}}
+:root[data-theme="dark"]{--bg:#0b1a18;--panel:#122925;--ink:#e6f1ee;--mute:#8fb0aa;--line:#24443f;--cu:#e39a54;--cool:#5ad1c8;--hot:#ff6a4a;--ok:#6fd08c}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Sora,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4}
+main{max-width:640px;margin:0 auto;padding:14px}
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.cash{font-size:2rem;font-weight:800}.rate{color:var(--mute);font-size:.9rem}
+.die{margin:12px 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:center}
+.chip{width:110px;height:110px;border-radius:10px;border:3px solid var(--cu);position:relative;display:grid;place-items:center;
+background:repeating-linear-gradient(90deg,transparent 0 9px,color-mix(in srgb,var(--cu) 35%,transparent) 9px 10px),var(--bg);transition:box-shadow .4s}
+.chip b{font-size:1.5rem}.chip small{display:block;color:var(--mute);text-align:center;font-size:.7rem}
+.chip.warm{box-shadow:0 0 16px var(--cu)}.chip.hot{box-shadow:0 0 26px var(--hot);animation:p .5s infinite alternate;border-color:var(--hot)}
+@keyframes p{to{box-shadow:0 0 6px var(--hot)}}
+@media (prefers-reduced-motion:reduce){.chip.hot{animation:none}}
+.bars{display:grid;gap:9px}
+.bar label{display:flex;justify-content:space-between;font-size:.78rem;color:var(--mute)}
+.track{height:9px;background:var(--line);border-radius:5px;overflow:hidden}
+.fill{height:100%;width:0;background:var(--cool);transition:width .3s,background .3s}
+.status{min-height:1.5em;font-size:.85rem;margin:0 0 8px;font-weight:600}
+.row{display:flex;gap:8px}
+button{font:inherit;cursor:pointer}
+.act{flex:1;padding:12px;border-radius:10px;border:1px solid var(--cu);background:var(--cu);color:#fff;font-weight:600}
+.act.alt{background:transparent;color:var(--cu)}
+.act:active{transform:scale(.98)}
+h2{font-size:1rem;margin:18px 0 8px}
+.up{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.up .n{font-weight:600}.up .d{grid-column:1;color:var(--mute);font-size:.8rem}
+.up button{grid-row:1/3;grid-column:2;padding:9px 12px;border-radius:9px;border:1px solid var(--cool);background:transparent;color:var(--cool);font-weight:600;min-width:92px}
+.up button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible{outline:3px solid var(--cool);outline-offset:2px}
+.fine{color:var(--mute);font-size:.75rem;margin-top:16px;text-align:center}
+.rack{background:#0a0f0e;border:2px solid #2b3835;border-radius:10px;padding:10px 16px;margin:0 0 10px;display:grid;gap:5px;box-shadow:inset 0 0 30px #000;position:relative}
+.rack:before,.rack:after{content:"";position:absolute;top:8px;bottom:8px;width:5px;background:repeating-linear-gradient(#2b3835 0 6px,transparent 6px 14px)}
+.rack:before{left:3px}.rack:after{right:3px}
+.unit{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;height:38px;padding:0 10px;background:linear-gradient(#26302e,#1a2220);border:1px solid #3a4845;border-radius:3px}
+.bays{display:flex;gap:3px}
+.bay{width:12px;height:20px;background:#0c1211;border:1px solid #3f4e4a;border-radius:1px}
+.bay.on{background:#1a3a35;box-shadow:inset 0 -6px #2fd0c0}
+.id{display:flex;align-items:center;gap:6px;color:#9fb8b2;font-size:.75rem}
+.led{width:7px;height:7px;border-radius:50%;background:#2f8f4e;box-shadow:0 0 5px #2fd05e}
+.led.ac{background:#e39a54;box-shadow:0 0 5px #e39a54;animation:blink calc(.12s + (1 - var(--load,0))*.9s) steps(2) infinite}
+.unit:nth-child(2n) .led.ac{animation-delay:-.2s}.unit:nth-child(3n) .led.ac{animation-delay:-.45s}
+@keyframes blink{50%{opacity:.15}}
+.fans{display:flex;gap:6px}
+.fan{width:24px;height:24px;border-radius:50%;border:2px solid #3f4e4a;background:conic-gradient(#6a8680 0 25%,#0c1211 0 50%,#6a8680 0 75%,#0c1211 0);animation:spin var(--fan,1.6s) linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rack.warm .led.pw{background:#e39a54;box-shadow:0 0 5px #e39a54}
+.rack.hot .unit{border-color:#ff6a4a;box-shadow:0 0 8px #ff6a4a88}
+.rack.hot .led.pw{background:#ff4a2a;box-shadow:0 0 6px #ff4a2a;animation:blink .3s steps(2) infinite}
+.rack.full .bay.on{background:#4a1f18;box-shadow:inset 0 -6px #ff6a4a}
+.unit.cool{height:26px;grid-template-columns:auto 1fr;color:#7fd8d0;font-size:.72rem;background:#10302d}
+.pipe{height:6px;border-radius:3px;background:linear-gradient(90deg,#2fd0c0,#0e5b54);opacity:calc(.3 + var(--p,0)*.12)}
+@media (prefers-reduced-motion:reduce){.fan,.led.ac,.rack.hot .led.pw{animation:none}}
+.chip{border-color:var(--tc,var(--cu))}
+.rack{outline:1px solid var(--tc,#2b3835);outline-offset:-1px}
+.led.ac{background:var(--tc,#e39a54);box-shadow:0 0 5px var(--tc,#e39a54)}
+.unit.sw,.unit.psu{height:26px;grid-template-columns:auto 1fr;font-size:.72rem;color:#9fb8b2}
+.ports{display:flex;gap:3px;flex-wrap:wrap}.port{width:9px;height:9px;background:#0c1211;border:1px solid #3f4e4a;border-radius:1px}.port.on{background:var(--tc,#2fd0c0)}
+.pwb{height:6px;background:#0c1211;border-radius:3px;overflow:hidden}.pwb i{display:block;height:100%;background:#e3c354;width:0}.rack.brown .pwb i{background:#ff6a4a}
+.mini{width:46px;height:6px;background:#0c1211;border-radius:3px;overflow:hidden}.mini i{display:block;height:100%;width:0;background:var(--tc,#2fd0c0)}
+.net{height:14px;position:relative;overflow:hidden;margin:0 0 6px;border-radius:7px;background:var(--panel);border:1px solid var(--line)}
+.net i{position:absolute;top:3px;width:6px;height:6px;border-radius:50%;background:var(--tc,var(--cu));left:-8px;animation:pk var(--pk,2s) linear infinite}
+@keyframes pk{to{left:100%}}
+.net.ddos i{background:var(--hot)}
+.ev{display:none;padding:8px 10px;border-radius:8px;margin-bottom:8px;font-weight:600;font-size:.85rem;background:var(--hot);color:#fff}.ev.spike{background:var(--cool)}
+@media (prefers-reduced-motion:reduce){.net i{animation:none}}
+.mk{font-size:.7rem;font-weight:400;margin-left:6px;color:var(--mute);white-space:nowrap}.mk.hi{color:var(--hot)}.mk.lo{color:var(--ok)}
+.mkt{font-size:.82rem;color:var(--mute);margin:-4px 0 8px}
+.up button.sale{background:var(--cool);color:#fff}
 </style>
 </head>
 <body>
