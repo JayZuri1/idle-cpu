@@ -61,3 +61,24 @@ main{padding:10px 12px 24px}
 .up button:disabled{background:var(--line);color:var(--mute);opacity:1}.up button.sale{background:#7df3ff;color:#04130e}
 h2{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
 @media (prefers-reduced-motion:reduce){#wp,#sB,#nodes i,.core.new{animation:none}}
+
+html{-webkit-tap-highlight-color:transparent}
+button{touch-action:manipulation}
+body{background-attachment:scroll}
+.board{grid-template-columns:78px minmax(0,1fr) 78px}
+#rate,#cash,#demand,#bill,#temp,#nc,#uT,.pn span,.conv label span{white-space:nowrap;font-variant-numeric:tabular-nums}
+.pn span{display:block;overflow:hidden;text-overflow:ellipsis;font-size:.56rem}
+#clock{white-space:normal;line-height:1.25}
+.chipsel small{white-space:nowrap}#rate{display:inline-block;max-width:8.5em;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+.cashbox{min-width:84px;max-width:46vw}#cash{display:block;overflow:hidden;text-overflow:ellipsis}
+#demand{display:block;overflow:hidden;text-overflow:ellipsis;max-width:36vw}
+.users{grid-template-columns:auto minmax(0,1fr) auto}
+.ev{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 54px);z-index:8;box-shadow:0 4px 16px #0008}
+.status{min-height:2.8em}.mkt{min-height:2.4em}
+.core i{transition:width .25s linear}
+.fan,#wp{will-change:transform}
+#ups{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+
+.top{flex-wrap:wrap}.chipsel{flex:1 1 100%}
+.cashbox{flex:1;max-width:none}#cash{text-overflow:clip}#demand{max-width:none}
+.ev{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);font-size:.78rem;padding:6px 10px}

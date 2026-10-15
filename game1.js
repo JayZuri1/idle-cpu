@@ -1,3 +1,5 @@
+(function(){const d=Object.getOwnPropertyDescriptor(Node.prototype,'textContent');
+Object.defineProperty(Node.prototype,'textContent',{get:d.get,set:function(v){if(this.nodeType===1&&this.childNodes.length===1&&this.firstChild.nodeType===3&&this.firstChild.data===''+v)return;d.set.call(this,v)},configurable:true})})();
 
 const KEY='idleServerV1';
 const fresh=()=>({cash:0,demand:3,temp:30,data:0,throttle:false,purgeCd:0,
@@ -71,13 +73,13 @@ function migrate(){const c=TC[S.tier];if(S.tier>=4||S.cash<c)return;S.tier++;S.c
 function renderExtra(){
  document.body.style.setProperty('--tc',TCOL[S.tier]);
  const m=maxUsers(),s=served(),r=Math.min(1,s/Math.max(1,m)),pw=powerDraw()/psuCap(),nr=s/netCap();
- $('pT').textContent=Math.round(powerDraw())+' / '+Math.round(psuCap())+' W';
+ $('pT').textContent=fmt(powerDraw())+' / '+fmt(psuCap())+' W';
  $('pB').style.width=Math.min(100,pw*100)+'%';$('pB').style.background=pw>1?'var(--hot)':pw>.85?'var(--cu)':'';
  $('nT').textContent=fmt(s)+' / '+fmt(netCap());$('nB').style.width=Math.min(100,nr*100)+'%';
  $('net').className='net'+(S.ev==='ddos'?' ddos':'');$('net').style.setProperty('--pk',(3-2.6*r).toFixed(2)+'s');
  [...$('net').children].forEach((d,i)=>d.style.display=i<Math.ceil(r*14)?'':'none');
  const e=$('ev');e.className='ev '+S.ev;e.style.display=S.ev?'block':'none';
- e.textContent=S.ev==='spike'?'Traffic spike! Demand is 2x for '+Math.ceil(S.evT)+'s.':S.ev==='ddos'?'DDoS attack! Junk traffic floods the network for '+Math.ceil(S.evT)+'s. A firewall keeps your income.':'';
+ e.textContent=S.ev==='spike'?'Traffic spike! 2x demand for '+Math.ceil(S.evT)+'s':S.ev==='ddos'?'DDoS attack! Junk traffic for '+Math.ceil(S.evT)+'s. Firewall keeps income':'';
  $('clock').textContent=TIERS[S.tier]+' · '+(2+L.clock*.3).toFixed(1)+' GHz';
  $('tn').textContent='Tier '+(S.tier+1)+': '+TIERS[S.tier];
  $('td').textContent=S.tier>=4?'Top tier reached.':'Next: '+TIERS[S.tier+1]+'. Resets cash and upgrades. Capacity x5, costs x3, heat +10%.';

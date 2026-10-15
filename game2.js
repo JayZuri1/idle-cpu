@@ -1,3 +1,4 @@
+const fm=n=>{const a=Math.abs(n);return (n<0?'-':'')+(a<100?a.toFixed(1):fmt(a))};
 const fmt=n=>n>=1e9?(n/1e9).toFixed(2)+'B':n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e4?(n/1e3).toFixed(1)+'K':Math.floor(n).toLocaleString();
 
 function tick(dt){
@@ -41,15 +42,15 @@ $('reset').onclick=()=>{if(confirm('Erase all progress?')){try{localStorage.remo
 function bar(id,pct,color){const f=$(id);f.style.width=Math.min(100,pct)+'%';f.style.background=color||''}
 function render(){
  $('cash').textContent='$'+fmt(S.cash);
- $('rate').textContent='$'+income().toFixed(1)+'/s';
+ $('rate').textContent='$'+fm(income())+'/s';
  $('demand').textContent='Demand: '+fmt(S.demand)+' users';
  const s=served(),m=maxUsers();
  $('uT').textContent=fmt(s)+' / '+fmt(m);bar('uB',s/m*100);
  const hot=S.temp>=95||S.throttle?'var(--hot)':S.temp>75?'var(--cu)':'var(--cool)';
  $('hT').textContent=Math.round(S.temp)+'°C';bar('hB',(S.temp-25)/80*100,hot);
  const ramUse=Math.min(100,s/ramCap()*100);
- $('rT').textContent=Math.round(s/(8*tm())*10)/10+' / '+(2+L.ram*4)+' GB';bar('rB',ramUse,ramUse>95?'var(--cu)':'');
- $('sT').textContent=S.data.toFixed(1)+' / '+diskCap()+' GB';bar('sB',S.data/diskCap()*100,diskFull()?'var(--hot)':S.data/diskCap()>.8?'var(--cu)':'');
+ $('rT').textContent=fm(s/(8*tm()))+' / '+(2+L.ram*4)+' GB';bar('rB',ramUse,ramUse>95?'var(--cu)':'');
+ $('sT').textContent=fm(S.data)+' / '+fmt(diskCap())+' GB';bar('sB',S.data/diskCap()*100,diskFull()?'var(--hot)':S.data/diskCap()>.8?'var(--cu)':'');
  $('temp').textContent=Math.round(S.temp)+'°';
  $('clock').textContent=(2+L.clock*.3).toFixed(1)+' GHz · '+(1+L.cores)+'c';
  $('chip').className='chip '+(S.throttle?'hot':S.temp>75?'warm':'');
@@ -89,13 +90,13 @@ function renderBoard(){
  fa.style.setProperty('--fan',Math.max(.12,1.6-(S.temp-30)/45).toFixed(2)+'s');
  const po=$('ports'),pn=Math.min(12,4+L.net*2),nr=served()/netCap();
  if(po.dataset.n!==''+pn){po.dataset.n=''+pn;po.innerHTML='<i class="pt"></i>'.repeat(pn)}
- po.querySelectorAll('.pt').forEach(p=>p.classList.toggle('on',Math.random()<nr*.8+.1));
+ if((window._pf=(window._pf||0)+1)%4===0)po.querySelectorAll('.pt').forEach(p=>p.classList.toggle('on',Math.random()<nr*.8+.1));
  cells('ramc',served()/ramCap());cells('pwc',powerDraw()/psuCap(),brown());
  const wp=$('wp');if(wp.dataset.k!==''+L.clock){wp.dataset.k=''+L.clock;const k=2+Math.min(10,L.clock);let d='';for(let x=0;x<=140;x+=2)d+=(x?'L':'M')+x+','+(12+9*Math.sin(x/70*2*Math.PI*k)).toFixed(1);wp.setAttribute('d',d)}
  $('wave').style.setProperty('--ws',(2.4/(1+L.clock*.25)).toFixed(2)+'s');
 }
 const cv=$('cv'),cx=cv.getContext('2d'),PT=[];
-function sizeCv(){const d=window.devicePixelRatio||1;cv.width=cv.clientWidth*d;cv.height=cv.clientHeight*d;cx.setTransform(d,0,0,d,0,0)}
+function sizeCv(){const d=Math.min(2,window.devicePixelRatio||1);cv.width=cv.clientWidth*d;cv.height=cv.clientHeight*d;cx.setTransform(d,0,0,d,0,0)}
 sizeCv();addEventListener('resize',sizeCv);
 let lf=performance.now();
 function loop(now){
