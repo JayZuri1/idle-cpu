@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Idle Server</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style2.css">
+<style>.acct{display:flex;align-items:center;gap:8px;margin:8px 0 0;font-size:.65rem;color:var(--mute)}.acct button{flex:none;padding:6px 10px;font-size:.7rem}</style>
+</head>
+<body>
+<script>addEventListener('error',function(e){var d=document.getElementById('errbox');if(!d){d=document.createElement('div');d.id='errbox';d.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:99;background:#a00;color:#fff;font:12px monospace;padding:8px;white-space:pre-wrap';document.body.appendChild(d)}d.textContent+=(e.message||'error')+' @'+(e.lineno||'?')+':'+(e.colno||'?')+'\n'});</script>
+<main>
+ <div class="top">
+  <div class="chipsel"><span id="tn"></span><small>NET INCOME <b id="rate"></b></small></div>
+  <button id="mig"></button>
+  <div class="cashbox"><b id="cash">$0</b><small id="demand"></small></div>
+  <button id="snd" class="act alt">Sound on</button>
+ </div>
+ <span id="td" hidden></span>
+ <div class="acct"><button id="gl" class="act alt">Sign in with Google</button><small id="gs"></small></div>
+ <div class="ev" id="ev"></div>
+ <div class="bill">BILLING <b id="bill"></b> /USER</div>
+ <div class="nc" id="nc"></div>
+ <div class="board">
+  <div class="col">
+   <div class="pn"><h4>Clock</h4><b id="clock"></b><svg id="wave" class="wv" viewBox="0 0 70 24"><path id="wp" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></div>
+   <div class="pn"><h4>Memory</h4><div class="cells" id="ramc"></div><span id="rT"></span><div class="track"><div class="fill" id="rB"></div></div></div>
+   <div class="pn"><h4>Power</h4><div class="cells" id="pwc"></div><span id="pT"></span><div class="track"><div class="fill" id="pB"></div></div></div>
+  </div>
+  <div>
+   <div class="frame" id="frame">
+    <div class="fh"><span>CHIP <b id="temp"></b></span><span id="nodes"></span></div>
+    <div class="grid" id="grid"></div>
+   </div>
+   <div class="conv"><label>STORAGE <span id="sT"></span></label><div class="track"><div class="fill" id="sB"></div></div></div>
+  </div>
+  <div class="col r">
+   <div class="pn"><h4>Cooling</h4><div class="fans" id="fans"></div><span id="hT"></span><div class="track"><div class="fill" id="hB"></div></div></div>
+   <div class="pn"><h4>Network</h4><div class="ports" id="ports"></div><span id="nT"></span><div class="track"><div class="fill" id="nB"></div></div></div>
+  </div>
+ </div>
+ <canvas id="cv"></canvas>
+ <div class="users"><span>USERS</span><div class="track"><div class="fill" id="uB"></div></div><b id="uT"></b></div>
+ <p class="status" id="status"></p>
+ <div class="mkt" id="news"></div>
+ <div class="row"><button class="act" id="click"></button><button class="act alt" id="purge"></button></div>
+ <h2>Upgrades</h2>
+ <div id="ups"></div>
+ <div id="net" style="display:none"></div><div id="rack" style="display:none"></div><div class="chip" id="chip" style="display:none"></div>
+ <p class="fine"><button id="reset" style="background:none;border:0;color:var(--mute);text-decoration:underline;font-size:inherit">Reset game</button></p>
+</main>
+<script src="game1.js"></script>
+<script src="game2.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="cloud.js"></script>
+</body>
+</html>
