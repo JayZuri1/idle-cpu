@@ -83,47 +83,151 @@ button:focus-visible{outline:3px solid var(--cool);outline-offset:2px}
 @keyframes slidein{from{transform:translateX(-40px);opacity:0;box-shadow:0 0 16px var(--tc,#2fd0c0)}}
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);background:var(--cool);color:#fff;padding:8px 16px;border-radius:20px;font-weight:600;font-size:.9rem;z-index:9;box-shadow:0 4px 16px #0006;pointer-events:none;white-space:nowrap;animation:toast 1.6s ease-out forwards}
 @keyframes toast{0%{opacity:0;transform:translate(-50%,-16px)}15%{opacity:1;transform:translate(-50%,0)}80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-8px)}}
+:root:root:root{--bg:#050b0a;--panel:#0b1715;--ink:#d8f5ec;--mute:#6f9a90;--line:#1b3f38;--cu:#e39a54;--cool:#3ee6a0;--hot:#ff5a3c;--ok:#3ee6a0;color-scheme:dark}
+body{background-color:#050b0a;background-image:linear-gradient(rgba(62,230,160,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(62,230,160,.06) 1px,transparent 1px);background-size:22px 22px;background-attachment:fixed}
+main{padding:10px 12px 24px}
+.top{display:flex;gap:8px;align-items:center}.chipsel{flex:1;display:grid;line-height:1.25}
+#tn{font-weight:800;letter-spacing:.1em;font-size:.78rem;text-transform:uppercase}#tn::after{content:' \25be';color:var(--mute)}
+.chipsel small{color:var(--mute);font-size:.6rem;letter-spacing:.1em}.chipsel small b{color:var(--ink);font-size:.8rem}
+#mig{padding:5px 8px;border-radius:7px;border:1px solid var(--cu);background:transparent;color:var(--cu);font-size:.68rem;font-weight:700}
+#mig::before{content:'Migrate ';opacity:.7}#mig:disabled{opacity:.35}
+.cashbox{border:1.5px solid var(--cool);background:rgba(62,230,160,.12);border-radius:8px;padding:3px 10px;text-align:right;line-height:1.15}
+#cash{font-size:1.2rem;color:var(--cool)}.cashbox small{display:block;font-size:.58rem;color:var(--mute)}
+#snd{flex:none;padding:6px 8px;font-size:.65rem}
+.bill{margin:10px auto 2px;border:1.5px solid var(--cool);border-radius:20px;padding:4px 14px;width:max-content;font-size:.72rem;letter-spacing:.08em;background:rgba(62,230,160,.08);color:var(--cool)}
+.nc{text-align:center;font-size:.68rem;letter-spacing:.14em;color:var(--mute);margin-bottom:6px}
+.board{display:grid;grid-template-columns:76px 1fr 76px;gap:8px}
+.col{display:grid;gap:8px;align-content:stretch}.col.r{grid-template-rows:1.5fr 1fr}
+.pn{border:1px dashed rgba(62,230,160,.3);border-radius:8px;padding:7px;background:rgba(5,15,13,.65);display:grid;gap:5px;align-content:start;font-size:.6rem;color:var(--mute);color:var(--tc,#3ee6a0)}
+.pn h4{margin:0;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}.pn b{font-size:.72rem;color:var(--ink)}.pn span{color:var(--mute)}
+.pn .track{height:5px}
+.wv{width:100%;height:24px;color:var(--tc,#3ee6a0)}#wp{animation:wv var(--ws,2s) linear infinite}@keyframes wv{to{transform:translateX(-70px)}}
+.cells{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}.cells i{height:8px;background:rgba(62,230,160,.12);border-radius:1px}
+.cells i.l{background:var(--tc,#3ee6a0);box-shadow:0 0 4px var(--tc,#3ee6a0)}.cells i.l.bad{background:var(--hot);box-shadow:0 0 4px var(--hot)}
+.fans{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}.fans .fan{width:30px;height:30px}
+.ports{display:flex;flex-wrap:wrap;gap:3px}.pt{width:9px;height:9px;border:1px solid #2a5a51;border-radius:1px}.pt.on{background:var(--tc,#3ee6a0);box-shadow:0 0 4px var(--tc,#3ee6a0)}
+.frame{border:1.5px solid var(--tc,#3ee6a0);border-radius:8px;padding:8px;background:rgba(5,15,13,.75);box-shadow:inset 0 0 22px rgba(62,230,160,.08),0 0 10px color-mix(in srgb,var(--tc,#3ee6a0) 25%,transparent)}
+.frame.warm{box-shadow:0 0 16px var(--cu)}.frame.hot{border-color:var(--hot);animation:p .5s infinite alternate}.frame.ddos{border-style:dashed}
+.fh{display:flex;justify-content:space-between;align-items:center;font-size:.62rem;letter-spacing:.1em;color:var(--mute);margin-bottom:6px}.fh b{color:var(--ink)}
+#nodes i{display:inline-block;width:7px;height:7px;margin-left:3px;border-radius:2px;background:var(--tc,#3ee6a0);animation:blink 1.2s steps(2) infinite}#nodes i:nth-child(2n){animation-delay:-.4s}#nodes i:nth-child(3n){animation-delay:-.8s}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.core{aspect-ratio:1;border:1px solid rgba(62,230,160,.18);border-radius:5px;background:rgba(62,230,160,.03);position:relative;display:grid;place-items:center}
+.core.on{border-color:var(--tc,#3ee6a0);background:linear-gradient(145deg,color-mix(in srgb,var(--tc,#3ee6a0) 28%,transparent),color-mix(in srgb,var(--tc,#3ee6a0) 6%,transparent))}
+.core.on::before{content:"";position:absolute;inset:6px 6px 9px;border:1px solid color-mix(in srgb,var(--tc,#3ee6a0) 45%,transparent);background:repeating-linear-gradient(0deg,transparent 0 5px,color-mix(in srgb,var(--tc,#3ee6a0) 25%,transparent) 5px 6px)}
+.core i{position:absolute;left:5px;bottom:3px;height:3px;border-radius:2px;background:var(--tc,#3ee6a0);width:0;max-width:calc(100% - 10px)}
+.core.add{border-style:dashed;color:var(--mute);font-size:1.1rem}
+.core.new{animation:corein .6s ease-out}@keyframes corein{from{transform:scale(.4);filter:brightness(3)}}
+.core em{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-style:normal;font-size:.55rem;color:var(--cool);white-space:nowrap;animation:fade 1.8s forwards}@keyframes fade{70%{opacity:1}to{opacity:0}}
+.frame.hot .core.on{border-color:var(--hot);animation:blink .5s steps(2) infinite}
+.conv{margin-top:8px}.conv label{display:flex;justify-content:space-between;font-size:.6rem;letter-spacing:.1em;color:var(--mute);margin-bottom:3px}
+.conv .track{height:12px;border-radius:3px;background:repeating-linear-gradient(90deg,rgba(62,230,160,.14) 0 6px,transparent 6px 8px)}
+#sB{background:repeating-linear-gradient(90deg,var(--tc,#3ee6a0) 0 6px,transparent 6px 8px);background-size:8px 100%;animation:conv .5s linear infinite}@keyframes conv{to{background-position:8px 0}}
+#cv{display:block;width:100%;height:170px;margin-top:4px}
+.users{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1.5px solid var(--cool);border-radius:10px;padding:8px 12px;background:rgba(5,15,13,.85);font-size:.72rem;letter-spacing:.12em;font-weight:700;margin:-4px 0 10px;color:var(--cool)}
+.users .track{height:10px}.users b{font-size:1rem;color:var(--ink)}
+#ups{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;padding:4px 12px 10px;margin:0 -12px}
+.up{display:flex;flex-direction:column;gap:5px;flex:0 0 158px;scroll-snap-align:start;margin:0;background:rgba(9,22,19,.92);border-color:var(--line)}
+.up .n{display:block;font-size:.72rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.up .d{font-size:.7rem;min-height:2.6em}
+.up button{width:100%;min-width:0;border:0;background:var(--cool);color:#04130e;font-weight:800;padding:9px}
+.up button:disabled{background:var(--line);color:var(--mute);opacity:1}.up button.sale{background:#7df3ff;color:#04130e}
+h2{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+@media (prefers-reduced-motion:reduce){#wp,#sB,#nodes i,.core.new{animation:none}}
+
 </style>
 </head>
 <body>
 <main>
- <div class="top"><div><div class="cash" id="cash">$0</div><div class="rate" id="rate"></div></div>
-  <div style="text-align:right"><div class="rate" id="demand"></div><button id="snd" class="act alt" style="flex:none;padding:4px 10px;margin-top:4px;font-size:.8rem">🔊 Sound on</button></div></div>
-
- <section class="die">
-  <div class="chip" id="chip"><div><b id="temp">30°</b><small id="clock"></small></div></div>
-  <div class="bars">
-   <div class="bar"><label><span>Users online</span><span id="uT"></span></label><div class="track"><div class="fill" id="uB"></div></div></div>
-   <div class="bar"><label><span>Heat</span><span id="hT"></span></label><div class="track"><div class="fill" id="hB"></div></div></div>
-   <div class="bar"><label><span>RAM</span><span id="rT"></span></label><div class="track"><div class="fill" id="rB"></div></div></div>
-   <div class="bar"><label><span>Storage</span><span id="sT"></span></label><div class="track"><div class="fill" id="sB"></div></div></div>
-   <div class="bar"><label><span>Power</span><span id="pT"></span></label><div class="track"><div class="fill" id="pB"></div></div></div>
-   <div class="bar"><label><span>Network</span><span id="nT"></span></label><div class="track"><div class="fill" id="nB"></div></div></div>
-  </div>
- </section>
-
- <div class="ev" id="ev"></div>
- <div class="net" id="net" aria-hidden="true"></div>
- <div class="rack" id="rack" aria-hidden="true"></div>
- <p class="status" id="status"></p>
- <div class="row">
-  <button class="act" id="click">Auto-handle: On</button>
-  <button class="act alt" id="purge">Purge logs</button>
+ <div class="top">
+  <div class="chipsel"><span id="tn"></span><small>NET INCOME <b id="rate"></b></small></div>
+  <button id="mig"></button>
+  <div class="cashbox"><b id="cash">$0</b><small id="demand"></small></div>
+  <button id="snd" class="act alt">Sound on</button>
  </div>
-
- <h2>Upgrades</h2>
+ <span id="td" hidden></span>
+ <div class="ev" id="ev"></div>
+ <div class="bill">BILLING <b id="bill"></b> /USER</div>
+ <div class="nc" id="nc"></div>
+ <div class="board">
+  <div class="col">
+   <div class="pn"><h4>Clock</h4><b id="clock"></b><svg id="wave" class="wv" viewBox="0 0 70 24"><path id="wp" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></div>
+   <div class="pn"><h4>Memory</h4><div class="cells" id="ramc"></div><span id="rT"></span><div class="track"><div class="fill" id="rB"></div></div></div>
+   <div class="pn"><h4>Power</h4><div class="cells" id="pwc"></div><span id="pT"></span><div class="track"><div class="fill" id="pB"></div></div></div>
+  </div>
+  <div>
+   <div class="frame" id="frame">
+    <div class="fh"><span>CHIP <b id="temp"></b></span><span id="nodes"></span></div>
+    <div class="grid" id="grid"></div>
+   </div>
+   <div class="conv"><label>STORAGE <span id="sT"></span></label><div class="track"><div class="fill" id="sB"></div></div></div>
+  </div>
+  <div class="col r">
+   <div class="pn"><h4>Cooling</h4><div class="fans" id="fans"></div><span id="hT"></span><div class="track"><div class="fill" id="hB"></div></div></div>
+   <div class="pn"><h4>Network</h4><div class="ports" id="ports"></div><span id="nT"></span><div class="track"><div class="fill" id="nB"></div></div></div>
+  </div>
+ </div>
+ <canvas id="cv"></canvas>
+ <div class="users"><span>USERS</span><div class="track"><div class="fill" id="uB"></div></div><b id="uT"></b></div>
+ <p class="status" id="status"></p>
  <div class="mkt" id="news"></div>
+ <div class="row"><button class="act" id="click"></button><button class="act alt" id="purge"></button></div>
+ <h2>Upgrades</h2>
  <div id="ups"></div>
- <h2>Hardware tier</h2>
- <div class="up"><div class="n" id="tn"></div><div class="d" id="td"></div><button id="mig"></button></div>
- <p class="fine">Progress saves automatically. <button id="reset" style="background:none;border:0;color:var(--mute);text-decoration:underline;font-size:inherit">Reset game</button></p>
+ <div id="net" style="display:none"></div><div id="rack" style="display:none"></div><div class="chip" id="chip" style="display:none"></div>
+ <p class="fine"><button id="reset" style="background:none;border:0;color:var(--mute);text-decoration:underline;font-size:inherit">Reset game</button></p>
 </main>
+
 
 <script>
 const KEY='idleServerV1';
 const fresh=()=>({cash:0,demand:3,temp:30,data:0,throttle:false,purgeCd:0,
  tier:0,mk:{},mkEv:30,ev:'',evT:0,nextEv:40,
  lv:{cores:0,clock:0,vms:0,ram:0,disk:0,cool:0,psu:0,net:0,fw:0,lb:0}});
+let S=fresh();
+try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);S=Object.assign(fresh(),o,{lv:Object.assign(fresh().lv,o.lv)})}}catch(e){}
+
+const U={
+ cores:{n:'CPU cores',base:50,g:1.5,max:15,d:l=>`${1+l} → ${2+l} cores · +10 user capacity each`},
+ clock:{n:'Clock speed',base:80,g:1.7,max:20,d:l=>`${(2+l*.3).toFixed(1)} → ${(2.3+l*.3).toFixed(1)} GHz · +20% capacity, runs hotter`},
+ vms:{n:'Cluster',base:300,g:2.2,max:12,d:l=>`${1+l} → ${2+l} VMs · +35% capacity each`},
+ ram:{n:'RAM stick',base:40,g:1.45,max:40,d:l=>`${2+l*4} → ${6+l*4} GB · 8 users per GB`},
+ disk:{n:'Storage drive',base:30,g:1.5,max:40,d:l=>`${20+l*40} → ${60+l*40} GB · users generate data`},
+ cool:{n:'Cooling',base:100,g:2.3,max:6,d:l=>`${['Stock fan','Heatsink','Dual fans','Liquid loop','Big radiator','Chiller','Cryo'][l]} → ${['Heatsink','Dual fans','Liquid loop','Big radiator','Chiller','Cryo','Maxed'][l]}`},
+ psu:{n:'Power supply',base:70,g:1.5,max:25,d:l=>`${(300+l*220)*tm()} → ${(520+l*220)*tm()} W · overdraw causes brownouts`},
+ net:{n:'Network bandwidth',base:60,g:1.55,max:30,d:l=>`${(1+l)*14*tm()} → ${(2+l)*14*tm()} users of bandwidth`},
+ fw:{n:'Firewall',base:150,g:1.9,max:5,d:l=>`Blocks DDoS junk · keeps ${Math.min(100,40+l*15)}% → ${Math.min(100,55+l*15)}% income in attacks`},
+ lb:{n:'Load balancer',base:200,g:1.8,max:8,d:l=>`Spreads load · heat -${l*6}% → -${l*6+6}%`}
+};
+const cost=k=>Math.floor(U[k].base*Math.pow(U[k].g+.04,S.lv[k])*Math.pow(3,S.tier)*(S.mk[k]||1));
+const L=S.lv;
+const cpuCap=()=>Math.floor((1+L.cores)*10*(1+.2*L.clock)*(1+.35*L.vms)*tm()*(brown()?.6:1)*(S.throttle?.5:1));
+const ramCap=()=>(2+L.ram*4)*8*tm();
+const diskCap=()=>(20+L.disk*40)*tm();
+const maxUsers=()=>Math.min(cpuCap(),ramCap(),netCap());
+const served=()=>Math.floor(Math.min(S.demand*(S.ev==='spike'?2:S.ev==='ddos'?2:1),maxUsers()));
+const load=()=>Math.min(1,served()/Math.max(1,Math.floor(cpuCap()/(S.throttle?.5:1))));
+const diskFull=()=>S.data>=diskCap();
+const income=()=>served()*.6*(S.throttle?.7:1)*(diskFull()?.5:1)*(S.ev==='ddos'?Math.min(1,.4+.15*L.fw):1)-powerDraw()*.002;
+
+const $=id=>document.getElementById(id);
+let AC=null,hum=null,humG=null,humF=null,snd=true,lastAlarm=0,wasFull=false,rackSig='';
+function initAudio(){
+ if(AC){if(AC.resume)AC.resume();return}
+ try{AC=new (window.AudioContext||window.webkitAudioContext)();
+ hum=AC.createOscillator();hum.type='sawtooth';hum.frequency.value=60;
+ humF=AC.createBiquadFilter();humF.type='lowpass';humF.frequency.value=200;
+ humG=AC.createGain();humG.gain.value=0;
+ hum.connect(humF);humF.connect(humG);humG.connect(AC.destination);hum.start();}catch(e){AC=null}
+}
+function beep(f,d,type,v,f2){
+ if(!AC||!snd)return;
+ const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;
+ o.type=type||'square';o.frequency.setValueAtTime(f,t);
+ if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+ g.gain.setValueAtTime(v||.05,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+ o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);
+}
+const sfx={click:()=>beep(900,.05,'square',.03,1400),
+ buy:()=>{beep(520,.09,'triangle',.06);setTimeout(()=>beep(780,.14,'triangle',.06),80)ol:0,psu:0,net:0,fw:0,lb:0}});
 let S=fresh();
 try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);S=Object.assign(fresh(),o,{lv:Object.assign(fresh().lv,o.lv)})}}catch(e){}
 
